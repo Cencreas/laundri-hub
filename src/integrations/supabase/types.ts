@@ -14,7 +14,166 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          contacto: string
+          created_at: string
+          documento: string | null
+          endereco: string
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contacto: string
+          created_at?: string
+          documento?: string | null
+          endereco: string
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contacto?: string
+          created_at?: string
+          documento?: string | null
+          endereco?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ordens_servico: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_entrega_prevista: string
+          id: string
+          observacoes: string | null
+          preco_unitario: number
+          quantidade: number
+          status: Database["public"]["Enums"]["status_ordem"]
+          tipo_roupa: string
+          tipo_servico: Database["public"]["Enums"]["tipo_servico"]
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_entrega_prevista: string
+          id: string
+          observacoes?: string | null
+          preco_unitario: number
+          quantidade: number
+          status?: Database["public"]["Enums"]["status_ordem"]
+          tipo_roupa: string
+          tipo_servico: Database["public"]["Enums"]["tipo_servico"]
+          total: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_entrega_prevista?: string
+          id?: string
+          observacoes?: string | null
+          preco_unitario?: number
+          quantidade?: number
+          status?: Database["public"]["Enums"]["status_ordem"]
+          tipo_roupa?: string
+          tipo_servico?: Database["public"]["Enums"]["tipo_servico"]
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamentos: {
+        Row: {
+          created_at: string
+          data_pagamento: string
+          forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
+          id: string
+          observacoes: string | null
+          ordem_id: string
+          updated_at: string
+          user_id: string
+          valor_pago: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string
+          forma_pagamento: Database["public"]["Enums"]["forma_pagamento"]
+          id: string
+          observacoes?: string | null
+          ordem_id: string
+          updated_at?: string
+          user_id: string
+          valor_pago: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string
+          forma_pagamento?: Database["public"]["Enums"]["forma_pagamento"]
+          id?: string
+          observacoes?: string | null
+          ordem_id?: string
+          updated_at?: string
+          user_id?: string
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +182,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      forma_pagamento: "dinheiro" | "m_pesa" | "transferencia" | "cartao"
+      status_ordem:
+        | "recebido"
+        | "em_processo"
+        | "pronto"
+        | "entregue"
+        | "cancelado"
+      tipo_servico:
+        | "lavagem_simples"
+        | "lavagem_seco"
+        | "engomagem"
+        | "lavagem_engomagem"
+        | "lavagem_especial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +321,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      forma_pagamento: ["dinheiro", "m_pesa", "transferencia", "cartao"],
+      status_ordem: [
+        "recebido",
+        "em_processo",
+        "pronto",
+        "entregue",
+        "cancelado",
+      ],
+      tipo_servico: [
+        "lavagem_simples",
+        "lavagem_seco",
+        "engomagem",
+        "lavagem_engomagem",
+        "lavagem_especial",
+      ],
+    },
   },
 } as const
