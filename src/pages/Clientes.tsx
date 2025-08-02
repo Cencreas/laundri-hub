@@ -4,18 +4,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
-import { mockClientes } from "@/data/mockData";
-import { Cliente } from "@/types";
+import { useClientes } from "@/hooks/useClientes";
 
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [clientes] = useState<Cliente[]>(mockClientes);
+  const { clientes, loading } = useClientes();
 
   const filteredClientes = clientes.filter(cliente =>
     cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.contacto.includes(searchTerm) ||
     cliente.endereco.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

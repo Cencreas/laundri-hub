@@ -1,19 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Droplets, Mail, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { signIn, signUp, user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar autenticação
-    console.log("Login:", { email, password });
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        await signUp(email, password);
+      } else {
+        const { error } = await signIn(email, password);
+        if (!error) {
+          navigate("/");
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,12 +54,12 @@ const Login = () => {
               Lavandaria Pro
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Entre na sua conta para continuar
+              {isSignUp ? "Crie sua conta para começar" : "Entre na sua conta para continuar"}
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-6">
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
                   Email
@@ -72,8 +96,8 @@ const Login = () => {
                 </div>
               </div>
               
-              <Button type="submit" className="w-full h-11 text-base font-medium">
-                Entrar
+              <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+                {loading ? "Processando..." : (isSignUp ? "Criar Conta" : "Entrar")}
               </Button>
             </form>
             
@@ -94,9 +118,14 @@ const Login = () => {
             </Button>
             
             <div className="text-center text-sm text-muted-foreground">
-              Não tem uma conta?{" "}
-              <Button variant="link" className="p-0 h-auto text-primary hover:text-primary/80">
-                Criar conta
+              {isSignUp ? "Já tem uma conta?" : "Não tem uma conta?"}{" "}
+              <Button 
+                variant="link" 
+                className="p-0 h-auto text-primary hover:text-primary/80"
+                onClick={() => setIsSignUp(!isSignUp)}
+                type="button"
+              >
+                {isSignUp ? "Entrar" : "Criar conta"}
               </Button>
             </div>
           </CardContent>

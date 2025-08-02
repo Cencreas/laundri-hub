@@ -7,10 +7,12 @@ import {
   CreditCard, 
   Menu,
   X,
-  Droplets
+  Droplets,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -21,6 +23,7 @@ const navigation = [
 
 export const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { signOut, user } = useAuth();
 
   return (
     <>
@@ -57,29 +60,58 @@ export const Sidebar = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent",
-                isActive 
-                  ? "bg-primary text-primary-foreground shadow-soft" 
-                  : "text-muted-foreground hover:text-foreground",
+        <div className="flex flex-col h-full">
+          <nav className="p-4 space-y-2 flex-1">
+            {navigation.map((item) => (
+              <NavLink
+                key={item.name}
+                to={item.href}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent",
+                  isActive 
+                    ? "bg-primary text-primary-foreground shadow-soft" 
+                    : "text-muted-foreground hover:text-foreground",
+                  isCollapsed && "lg:justify-center lg:px-2"
+                )}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span className={cn(
+                  "transition-opacity duration-300",
+                  isCollapsed ? "lg:opacity-0 lg:w-0" : "opacity-100"
+                )}>
+                  {item.name}
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+          
+          {/* User info and logout */}
+          <div className="p-4 border-t">
+            <div className={cn(
+              "px-3 py-2 text-sm text-muted-foreground transition-opacity duration-300",
+              isCollapsed ? "lg:opacity-0" : "opacity-100"
+            )}>
+              {user?.email}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className={cn(
+                "w-full justify-start text-muted-foreground hover:text-foreground",
                 isCollapsed && "lg:justify-center lg:px-2"
               )}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <LogOut className="h-4 w-4 flex-shrink-0" />
               <span className={cn(
-                "transition-opacity duration-300",
+                "ml-3 transition-opacity duration-300",
                 isCollapsed ? "lg:opacity-0 lg:w-0" : "opacity-100"
               )}>
-                {item.name}
+                Sair
               </span>
-            </NavLink>
-          ))}
-        </nav>
+            </Button>
+          </div>
+        </div>
 
         {/* Collapsed indicator */}
         {isCollapsed && (
