@@ -1,35 +1,60 @@
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, ShirtIcon, Filter } from "lucide-react";
+import { Search, Edit, Trash2, ShirtIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/layout/Layout";
-import { mockOrdens, statusLabels, tipoServicoLabels, statusColors } from "@/data/mockData";
-import { OrdemServico, StatusOrdem } from "@/types";
+import { useOrdemServico } from "@/hooks/useOrdemServico";
+import { NovaOrdemDialog } from "@/components/dialogs/NovaOrdemDialog";
 
 const OrdemServicoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusOrdem | "todos">("todos");
-  const [ordens] = useState<OrdemServico[]>(mockOrdens);
+  const [statusFilter, setStatusFilter] = useState<string | "todos">("todos");
+  const { ordens, loading } = useOrdemServico();
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   const filteredOrdens = ordens.filter(ordem => {
     const matchesSearch = 
       ordem.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ordem.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ordem.tipoRoupa.toLowerCase().includes(searchTerm.toLowerCase());
+      ordem.clientes.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ordem.tipo_roupa.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "todos" || ordem.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: StatusOrdem) => {
-    const colorClass = statusColors[status] || "bg-gray-100 text-gray-800";
+  const getStatusBadge = (status: string) => {
+    const statusLabels: Record<string, string> = {
+      recebido: "Recebido",
+      em_processo: "Em Processo",
+      pronto: "Pronto",
+      entregue: "Entregue",
+      cancelado: "Cancelado"
+    };
+    
+    const statusColors: Record<string, string> = {
+      recebido: "bg-blue-100 text-blue-800",
+      em_processo: "bg-yellow-100 text-yellow-800",
+      pronto: "bg-green-100 text-green-800",
+      entregue: "bg-gray-100 text-gray-800",
+      cancelado: "bg-red-100 text-red-800"
+    };
+    
     return (
-      <Badge variant="secondary" className={colorClass}>
-        {statusLabels[status]}
+      <Badge variant="secondary" className={statusColors[status] || "bg-gray-100 text-gray-800"}>
+        {statusLabels[status] || status}
       </Badge>
     );
   };
@@ -43,10 +68,7 @@ const OrdemServicoPage = () => {
             <h1 className="text-3xl font-bold text-foreground">Ordens de Serviço</h1>
             <p className="text-muted-foreground">Gerir todas as ordens de serviço</p>
           </div>
-          <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Ordem
-          </Button>
+          <NovaOrdemDialog />
         </div>
 
         {/* Filters */}
@@ -60,24 +82,30 @@ const OrdemServicoPage = () => {
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusOrdem | "todos")}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os Status</SelectItem>
-              <SelectItem value="recebido">Recebido</SelectItem>
-              <SelectItem value="em_processo">Em Processo</SelectItem>
-              <SelectItem value="pronto">Pronto</SelectItem>
-              <SelectItem value="entregue">Entregue</SelectItem>
-              <SelectItem value="cancelado">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os Status</SelectItem>
+                <SelectItem value="recebido">Recebido</SelectItem>
+                <SelectItem value="em_processo">Em Processo</SelectItem>
+                <SelectItem value="pronto">Pronto</SelectItem>
+                <SelectItem value="entregue">Entregue</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {Object.entries(statusLabels).map(([status, label]) => {
+          {[
+            { status: "recebido", label: "Recebido" },
+            { status: "em_processo", label: "Em Processo" },
+            { status: "pronto", label: "Pronto" },
+            { status: "entregue", label: "Entregue" },
+            { status: "cancelado", label: "Cancelado" }
+          ].map(({ status, label }) => {
             const count = ordens.filter(o => o.status === status).length;
             return (
               <Card key={status}>
@@ -116,15 +144,15 @@ const OrdemServicoPage = () => {
                         <h3 className="font-semibold text-foreground">{ordem.id}</h3>
                         {getStatusBadge(ordem.status)}
                       </div>
-                      <p className="text-sm text-muted-foreground">Cliente: {ordem.cliente.nome}</p>
+                      <p className="text-sm text-muted-foreground">Cliente: {ordem.clientes.nome}</p>
                       <p className="text-sm text-muted-foreground">
-                        {ordem.tipoRoupa} - {tipoServicoLabels[ordem.tipoServico]}
+                        {ordem.tipo_roupa} - {ordem.tipo_servico}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Quantidade: {ordem.quantidade} | Preço: {ordem.precoUnitario} MT/unidade
+                        Quantidade: {ordem.quantidade} | Preço: {ordem.preco_unitario} MT/unidade
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Entrega prevista: {ordem.dataEntregaPrevista.toLocaleDateString('pt-BR')}
+                        Entrega prevista: {new Date(ordem.data_entrega_prevista).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                   </div>

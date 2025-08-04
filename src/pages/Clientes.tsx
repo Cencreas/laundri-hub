@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, User } from "lucide-react";
+import { NovoClienteDialog } from "@/components/dialogs/NovoClienteDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,10 +36,7 @@ const Clientes = () => {
             <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
             <p className="text-muted-foreground">Gerir todos os clientes da lavandaria</p>
           </div>
-          <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Cliente
-          </Button>
+          <NovoClienteDialog />
         </div>
 
         {/* Search */}

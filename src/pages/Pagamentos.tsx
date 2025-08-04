@@ -1,35 +1,54 @@
 import { useState } from "react";
-import { Plus, Search, CreditCard, DollarSign, Clock, CheckCircle } from "lucide-react";
+import { Search, CreditCard, DollarSign, Clock, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/layout/Layout";
-import { mockPagamentos, mockOrdens, formaPagamentoLabels } from "@/data/mockData";
-import { Pagamento } from "@/types";
+import { usePagamentos } from "@/hooks/usePagamentos";
+import { useOrdemServico } from "@/hooks/useOrdemServico";
+import { NovoPagamentoDialog } from "@/components/dialogs/NovoPagamentoDialog";
 
 const Pagamentos = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagamentos] = useState<Pagamento[]>(mockPagamentos);
+  const { pagamentos, loading: loadingPagamentos } = usePagamentos();
+  const { ordens, loading: loadingOrdens } = useOrdemServico();
+
+  if (loadingPagamentos || loadingOrdens) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   const filteredPagamentos = pagamentos.filter(pagamento =>
     pagamento.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pagamento.ordem.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pagamento.ordem.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    pagamento.ordem_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pagamento.ordens_servico.clientes.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Calcular estatísticas
-  const totalPago = pagamentos.reduce((sum, p) => sum + p.valorPago, 0);
+  const totalPago = pagamentos.reduce((sum, p) => sum + p.valor_pago, 0);
   const ordensPagas = pagamentos.length;
-  const ordensPendentes = mockOrdens.filter(ordem => 
-    !pagamentos.some(p => p.ordemId === ordem.id)
+  const ordensPendentes = ordens.filter(ordem => 
+    !pagamentos.some(p => p.ordem_id === ordem.id)
   ).length;
-  const ordensAtrasadas = mockOrdens.filter(ordem => 
-    !pagamentos.some(p => p.ordemId === ordem.id) && 
-    ordem.dataEntregaPrevista < new Date()
+  const ordensAtrasadas = ordens.filter(ordem => 
+    !pagamentos.some(p => p.ordem_id === ordem.id) && 
+    new Date(ordem.data_entrega_prevista) < new Date()
   ).length;
 
   const getFormaPagamentoBadge = (forma: string) => {
+    const formaPagamentoLabels: Record<string, string> = {
+      dinheiro: "Dinheiro",
+      m_pesa: "M-Pesa",
+      transferencia: "Transferência",
+      cartao: "Cartão"
+    };
+    
     const colors = {
       dinheiro: "bg-green-100 text-green-800",
       m_pesa: "bg-blue-100 text-blue-800", 
@@ -39,7 +58,7 @@ const Pagamentos = () => {
     
     return (
       <Badge variant="secondary" className={colors[forma as keyof typeof colors]}>
-        {formaPagamentoLabels[forma as keyof typeof formaPagamentoLabels]}
+        {formaPagamentoLabels[forma] || forma}
       </Badge>
     );
   };
@@ -53,10 +72,7 @@ const Pagamentos = () => {
             <h1 className="text-3xl font-bold text-foreground">Pagamentos</h1>
             <p className="text-muted-foreground">Controlar todos os pagamentos e faturação</p>
           </div>
-          <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            Registrar Pagamento
-          </Button>
+          <NovoPagamentoDialog />
         </div>
 
         {/* Search */}
@@ -145,13 +161,13 @@ const Pagamentos = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground">{pagamento.id}</h3>
-                        {getFormaPagamentoBadge(pagamento.formaPagamento)}
+                        {getFormaPagamentoBadge(pagamento.forma_pagamento)}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Ordem: {pagamento.ordem.id} - {pagamento.ordem.cliente.nome}
+                        Ordem: {pagamento.ordem_id} - {pagamento.ordens_servico.clientes.nome}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Data: {pagamento.dataPagamento.toLocaleDateString('pt-BR')}
+                        Data: {new Date(pagamento.data_pagamento).toLocaleDateString('pt-BR')}
                       </p>
                       {pagamento.observacoes && (
                         <p className="text-sm text-muted-foreground">
@@ -162,7 +178,7 @@ const Pagamentos = () => {
                   </div>
                   <div className="flex items-center justify-between lg:justify-end gap-4 mt-4 lg:mt-0">
                     <div className="text-right">
-                      <p className="text-lg font-bold text-success">{pagamento.valorPago} MT</p>
+                      <p className="text-lg font-bold text-success">{pagamento.valor_pago} MT</p>
                       <p className="text-sm text-muted-foreground">Valor Pago</p>
                     </div>
                   </div>
@@ -189,8 +205,8 @@ const Pagamentos = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockOrdens
-                .filter(ordem => !pagamentos.some(p => p.ordemId === ordem.id))
+              {ordens
+                .filter(ordem => !pagamentos.some(p => p.ordem_id === ordem.id))
                 .map((ordem) => (
                 <div
                   key={ordem.id}
@@ -203,10 +219,10 @@ const Pagamentos = () => {
                     <div className="space-y-1">
                       <h3 className="font-semibold text-foreground">{ordem.id}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Cliente: {ordem.cliente.nome}
+                        Cliente: {ordem.clientes.nome}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {ordem.tipoRoupa} - Quantidade: {ordem.quantidade}
+                        {ordem.tipo_roupa} - Quantidade: {ordem.quantidade}
                       </p>
                     </div>
                   </div>
@@ -215,9 +231,11 @@ const Pagamentos = () => {
                       <p className="text-lg font-bold text-warning">{ordem.total} MT</p>
                       <p className="text-sm text-muted-foreground">A Receber</p>
                     </div>
-                    <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground">
-                      Registrar Pagamento
-                    </Button>
+                    <NovoPagamentoDialog ordemId={ordem.id}>
+                      <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground">
+                        Registrar Pagamento
+                      </Button>
+                    </NovoPagamentoDialog>
                   </div>
                 </div>
               ))}
