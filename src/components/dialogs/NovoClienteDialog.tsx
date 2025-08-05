@@ -48,6 +48,7 @@ export function NovoClienteDialog() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      console.log('📝 Submetendo formulário de novo cliente:', values);
       await createCliente({
         nome: values.nome,
         contacto: values.contacto,
@@ -56,8 +57,9 @@ export function NovoClienteDialog() {
       });
       form.reset();
       setOpen(false);
+      console.log('✅ Cliente criado e dialog fechado');
     } catch (error) {
-      console.error('Erro ao criar cliente:', error);
+      console.error('❌ Erro ao criar cliente no formulário:', error);
     }
   };
 

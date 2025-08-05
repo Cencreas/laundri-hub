@@ -73,6 +73,7 @@ export function NovoPagamentoDialog({ ordemId, children }: NovoPagamentoDialogPr
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      console.log('📝 Submetendo formulário de novo pagamento:', values);
       await createPagamento({
         ordem_id: values.ordem_id,
         valor_pago: values.valor_pago,
@@ -82,8 +83,9 @@ export function NovoPagamentoDialog({ ordemId, children }: NovoPagamentoDialogPr
       });
       form.reset();
       setOpen(false);
+      console.log('✅ Pagamento criado e dialog fechado');
     } catch (error) {
-      console.error('Erro ao registrar pagamento:', error);
+      console.error('❌ Erro ao criar pagamento no formulário:', error);
     }
   };
 

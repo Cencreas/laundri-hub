@@ -35,6 +35,16 @@ export function useOrdemServico() {
   const fetchOrdens = async () => {
     try {
       setLoading(true);
+      
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao buscar ordens');
+        throw new Error('Usuário não autenticado');
+      }
+      
+      console.log('📥 Buscando ordens para usuário:', user.id);
+      
       const { data, error } = await supabase
         .from('ordens_servico')
         .select(`
@@ -48,12 +58,18 @@ export function useOrdemServico() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar ordens:', error);
+        throw error;
+      }
+      
+      console.log('✅ Ordens carregadas:', data?.length || 0);
       setOrdens(data || []);
     } catch (error: any) {
+      console.error('❌ Erro completo ao carregar ordens:', error);
       toast({
         title: "Erro ao carregar ordens",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao carregar dados',
         variant: "destructive",
       });
     } finally {
@@ -73,7 +89,32 @@ export function useOrdemServico() {
     observacoes?: string;
   }) => {
     try {
-      const userId = (await supabase.auth.getUser()).data.user?.id;
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao criar ordem');
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('➕ Criando ordem para usuário:', user.id, ordem);
+
+      // Validar dados obrigatórios
+      if (!ordem.cliente_id) {
+        throw new Error('Cliente é obrigatório');
+      }
+      if (!ordem.tipo_servico) {
+        throw new Error('Tipo de serviço é obrigatório');
+      }
+      if (!ordem.tipo_roupa?.trim()) {
+        throw new Error('Tipo de roupa é obrigatório');
+      }
+      if (ordem.quantidade <= 0) {
+        throw new Error('Quantidade deve ser maior que zero');
+      }
+      if (ordem.preco_unitario <= 0) {
+        throw new Error('Preço unitário deve ser maior que zero');
+      }
+
       const { data, error } = await supabase
         .from('ordens_servico')
         .insert({
@@ -87,7 +128,7 @@ export function useOrdemServico() {
           data_entrega_prevista: ordem.data_entrega_prevista,
           status: ordem.status as any,
           observacoes: ordem.observacoes,
-          user_id: userId
+          user_id: user.id
         })
         .select(`
           *,
@@ -100,8 +141,12 @@ export function useOrdemServico() {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao criar ordem:', error);
+        throw error;
+      }
 
+      console.log('✅ Ordem criada com sucesso:', data);
       setOrdens(prev => [data, ...prev]);
       toast({
         title: "Ordem criada",
@@ -109,9 +154,10 @@ export function useOrdemServico() {
       });
       return data;
     } catch (error: any) {
+      console.error('❌ Erro completo ao criar ordem:', error);
       toast({
         title: "Erro ao criar ordem",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao criar ordem',
         variant: "destructive",
       });
       throw error;
@@ -130,6 +176,23 @@ export function useOrdemServico() {
     observacoes?: string;
   }) => {
     try {
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao atualizar ordem');
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('📝 Atualizando ordem:', id, updates);
+
+      // Validar dados se fornecidos
+      if (updates.quantidade !== undefined && updates.quantidade <= 0) {
+        throw new Error('Quantidade deve ser maior que zero');
+      }
+      if (updates.preco_unitario !== undefined && updates.preco_unitario <= 0) {
+        throw new Error('Preço unitário deve ser maior que zero');
+      }
+
       const { data, error } = await supabase
         .from('ordens_servico')
         .update(updates as any)
@@ -145,8 +208,12 @@ export function useOrdemServico() {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao atualizar ordem:', error);
+        throw error;
+      }
 
+      console.log('✅ Ordem atualizada com sucesso:', data);
       setOrdens(prev => prev.map(o => o.id === id ? data : o));
       toast({
         title: "Ordem atualizada",
@@ -154,9 +221,10 @@ export function useOrdemServico() {
       });
       return data;
     } catch (error: any) {
+      console.error('❌ Erro completo ao atualizar ordem:', error);
       toast({
         title: "Erro ao atualizar ordem",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao atualizar ordem',
         variant: "destructive",
       });
       throw error;
@@ -165,22 +233,36 @@ export function useOrdemServico() {
 
   const deleteOrdem = async (id: string) => {
     try {
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao deletar ordem');
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('🗑️ Deletando ordem:', id);
+
       const { error } = await supabase
         .from('ordens_servico')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao deletar ordem:', error);
+        throw error;
+      }
 
+      console.log('✅ Ordem deletada com sucesso:', id);
       setOrdens(prev => prev.filter(o => o.id !== id));
       toast({
         title: "Ordem removida",
         description: "Ordem de serviço removida com sucesso.",
       });
     } catch (error: any) {
+      console.error('❌ Erro completo ao deletar ordem:', error);
       toast({
         title: "Erro ao remover ordem",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao remover ordem',
         variant: "destructive",
       });
       throw error;

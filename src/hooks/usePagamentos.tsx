@@ -36,6 +36,16 @@ export function usePagamentos() {
   const fetchPagamentos = async () => {
     try {
       setLoading(true);
+      
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao buscar pagamentos');
+        throw new Error('Usuário não autenticado');
+      }
+      
+      console.log('📥 Buscando pagamentos para usuário:', user.id);
+      
       const { data, error } = await supabase
         .from('pagamentos')
         .select(`
@@ -54,12 +64,18 @@ export function usePagamentos() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar pagamentos:', error);
+        throw error;
+      }
+      
+      console.log('✅ Pagamentos carregados:', data?.length || 0);
       setPagamentos(data || []);
     } catch (error: any) {
+      console.error('❌ Erro completo ao carregar pagamentos:', error);
       toast({
         title: "Erro ao carregar pagamentos",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao carregar dados',
         variant: "destructive",
       });
     } finally {
@@ -75,7 +91,26 @@ export function usePagamentos() {
     observacoes?: string;
   }) => {
     try {
-      const userId = (await supabase.auth.getUser()).data.user?.id;
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao criar pagamento');
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('➕ Criando pagamento para usuário:', user.id, pagamento);
+
+      // Validar dados obrigatórios
+      if (!pagamento.ordem_id) {
+        throw new Error('Ordem é obrigatória');
+      }
+      if (pagamento.valor_pago <= 0) {
+        throw new Error('Valor do pagamento deve ser maior que zero');
+      }
+      if (!pagamento.forma_pagamento) {
+        throw new Error('Forma de pagamento é obrigatória');
+      }
+
       const { data, error } = await supabase
         .from('pagamentos')
         .insert({
@@ -85,7 +120,7 @@ export function usePagamentos() {
           forma_pagamento: pagamento.forma_pagamento as any,
           data_pagamento: pagamento.data_pagamento,
           observacoes: pagamento.observacoes,
-          user_id: userId
+          user_id: user.id
         })
         .select(`
           *,
@@ -103,8 +138,12 @@ export function usePagamentos() {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao criar pagamento:', error);
+        throw error;
+      }
 
+      console.log('✅ Pagamento criado com sucesso:', data);
       setPagamentos(prev => [data, ...prev]);
       toast({
         title: "Pagamento registrado",
@@ -112,9 +151,10 @@ export function usePagamentos() {
       });
       return data;
     } catch (error: any) {
+      console.error('❌ Erro completo ao criar pagamento:', error);
       toast({
         title: "Erro ao registrar pagamento",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao registrar pagamento',
         variant: "destructive",
       });
       throw error;
@@ -129,6 +169,20 @@ export function usePagamentos() {
     observacoes?: string;
   }) => {
     try {
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao atualizar pagamento');
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('📝 Atualizando pagamento:', id, updates);
+
+      // Validar dados se fornecidos
+      if (updates.valor_pago !== undefined && updates.valor_pago <= 0) {
+        throw new Error('Valor do pagamento deve ser maior que zero');
+      }
+
       const { data, error } = await supabase
         .from('pagamentos')
         .update(updates as any)
@@ -149,8 +203,12 @@ export function usePagamentos() {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao atualizar pagamento:', error);
+        throw error;
+      }
 
+      console.log('✅ Pagamento atualizado com sucesso:', data);
       setPagamentos(prev => prev.map(p => p.id === id ? data : p));
       toast({
         title: "Pagamento atualizado",
@@ -158,9 +216,10 @@ export function usePagamentos() {
       });
       return data;
     } catch (error: any) {
+      console.error('❌ Erro completo ao atualizar pagamento:', error);
       toast({
         title: "Erro ao atualizar pagamento",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao atualizar pagamento',
         variant: "destructive",
       });
       throw error;
@@ -169,22 +228,36 @@ export function usePagamentos() {
 
   const deletePagamento = async (id: string) => {
     try {
+      // Verificar autenticação
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔐 Usuário não autenticado ao deletar pagamento');
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('🗑️ Deletando pagamento:', id);
+
       const { error } = await supabase
         .from('pagamentos')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro Supabase ao deletar pagamento:', error);
+        throw error;
+      }
 
+      console.log('✅ Pagamento deletado com sucesso:', id);
       setPagamentos(prev => prev.filter(p => p.id !== id));
       toast({
         title: "Pagamento removido",
         description: "Pagamento removido com sucesso.",
       });
     } catch (error: any) {
+      console.error('❌ Erro completo ao deletar pagamento:', error);
       toast({
         title: "Erro ao remover pagamento",
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao remover pagamento',
         variant: "destructive",
       });
       throw error;

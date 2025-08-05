@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
+import { DebugPanel } from "@/components/DebugPanel";
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ export const Layout = ({ children }: LayoutProps) => {
           {children}
         </div>
       </main>
+      <DebugPanel />
     </div>
   );
 };

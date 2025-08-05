@@ -78,11 +78,13 @@ export function NovaOrdemDialog() {
         status: "recebido",
         observacoes: values.observacoes,
       };
+      console.log('📝 Submetendo formulário de nova ordem:', ordemData);
       await createOrdem(ordemData);
       form.reset();
       setOpen(false);
+      console.log('✅ Ordem criada e dialog fechado');
     } catch (error) {
-      console.error('Erro ao criar ordem:', error);
+      console.error('❌ Erro ao criar ordem no formulário:', error);
     }
   };
 
