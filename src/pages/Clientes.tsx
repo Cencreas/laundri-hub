@@ -1,15 +1,37 @@
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, User } from "lucide-react";
+import { Plus, Search, Trash2, User } from "lucide-react";
 import { NovoClienteDialog } from "@/components/dialogs/NovoClienteDialog";
+import { EditarClienteDialog } from "@/components/dialogs/EditarClienteDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { useClientes } from "@/hooks/useClientes";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { clientes, loading } = useClientes();
+  const [deleteClienteId, setDeleteClienteId] = useState<string | null>(null);
+  const { clientes, loading, deleteCliente, refetch } = useClientes();
+
+  const handleDeleteCliente = async (id: string) => {
+    try {
+      await deleteCliente(id);
+      setDeleteClienteId(null);
+      refetch();
+    } catch (error) {
+      console.error("Erro ao deletar cliente:", error);
+    }
+  };
 
   const filteredClientes = clientes.filter(cliente =>
     cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,10 +129,13 @@ const Clientes = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                    <EditarClienteDialog cliente={cliente} onClienteUpdated={refetch} />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteClienteId(cliente.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -126,6 +151,27 @@ const Clientes = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteClienteId} onOpenChange={() => setDeleteClienteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => deleteClienteId && handleDeleteCliente(deleteClienteId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

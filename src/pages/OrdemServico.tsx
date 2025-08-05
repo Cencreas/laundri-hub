@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Search, Edit, Trash2, ShirtIcon } from "lucide-react";
+import { Search, Trash2, ShirtIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +22,18 @@ import { NovaOrdemDialog } from "@/components/dialogs/NovaOrdemDialog";
 const OrdemServicoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | "todos">("todos");
-  const { ordens, loading } = useOrdemServico();
+  const [deleteOrdemId, setDeleteOrdemId] = useState<string | null>(null);
+  const { ordens, loading, deleteOrdem, refetch } = useOrdemServico();
+
+  const handleDeleteOrdem = async (id: string) => {
+    try {
+      await deleteOrdem(id);
+      setDeleteOrdemId(null);
+      refetch();
+    } catch (error) {
+      console.error("Erro ao deletar ordem:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -162,10 +183,12 @@ const OrdemServicoPage = () => {
                       <p className="text-sm text-muted-foreground">Total</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteOrdemId(ordem.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -182,6 +205,27 @@ const OrdemServicoPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteOrdemId} onOpenChange={() => setDeleteOrdemId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => deleteOrdemId && handleDeleteOrdem(deleteOrdemId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

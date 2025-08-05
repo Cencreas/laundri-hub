@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Search, CreditCard, DollarSign, Clock, CheckCircle } from "lucide-react";
+import { Search, CreditCard, DollarSign, Clock, CheckCircle, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +21,19 @@ import { NovoPagamentoDialog } from "@/components/dialogs/NovoPagamentoDialog";
 
 const Pagamentos = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { pagamentos, loading: loadingPagamentos } = usePagamentos();
+  const [deletePagamentoId, setDeletePagamentoId] = useState<string | null>(null);
+  const { pagamentos, loading: loadingPagamentos, deletePagamento, refetch } = usePagamentos();
   const { ordens, loading: loadingOrdens } = useOrdemServico();
+
+  const handleDeletePagamento = async (id: string) => {
+    try {
+      await deletePagamento(id);
+      setDeletePagamentoId(null);
+      refetch();
+    } catch (error) {
+      console.error("Erro ao deletar pagamento:", error);
+    }
+  };
 
   if (loadingPagamentos || loadingOrdens) {
     return (
@@ -181,6 +202,14 @@ const Pagamentos = () => {
                       <p className="text-lg font-bold text-success">{pagamento.valor_pago} MT</p>
                       <p className="text-sm text-muted-foreground">Valor Pago</p>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeletePagamentoId(pagamento.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -242,6 +271,27 @@ const Pagamentos = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletePagamentoId} onOpenChange={() => setDeletePagamentoId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este pagamento? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => deletePagamentoId && handleDeletePagamento(deletePagamentoId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
