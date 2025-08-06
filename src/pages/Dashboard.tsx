@@ -1,56 +1,89 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, ShirtIcon, CheckCircle, Clock, DollarSign, TrendingUp } from "lucide-react";
-import { mockStats, mockOrdens, mockClientes } from "@/data/mockData";
 import { Layout } from "@/components/layout/Layout";
+import { useClientes } from "@/hooks/useClientes";
+import { useOrdemServico } from "@/hooks/useOrdemServico";
+import { usePagamentos } from "@/hooks/usePagamentos";
+import { useEffect, useState } from "react";
 
 const Dashboard = () => {
+  const { clientes, loading: loadingClientes } = useClientes();
+  const { ordens, loading: loadingOrdens } = useOrdemServico();
+  const { pagamentos, loading: loadingPagamentos } = usePagamentos();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Auto-refresh a cada 30 segundos para dados em tempo real
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loadingClientes || loadingOrdens || loadingPagamentos) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Calcular estatísticas em tempo real
+  const ordensRecebidas = ordens.filter(o => o.status === "recebido").length;
+  const ordensEmProcesso = ordens.filter(o => o.status === "em_processo").length;
+  const ordensProntas = ordens.filter(o => o.status === "pronto").length;
+  const ordensEntregues = ordens.filter(o => o.status === "entregue").length;
+  const lucroMes = pagamentos.reduce((sum, p) => sum + p.valor_pago, 0);
+
   const stats = [
     {
       title: "Total de Clientes",
-      value: mockStats.totalClientes,
+      value: clientes.length,
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       title: "Ordens Recebidas",
-      value: mockStats.ordensRecebidas,
+      value: ordensRecebidas,
       icon: ShirtIcon,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
     {
       title: "Em Processo",
-      value: mockStats.ordensEmProcesso,
+      value: ordensEmProcesso,
       icon: Clock,
       color: "text-yellow-600",
       bgColor: "bg-yellow-50",
     },
     {
       title: "Prontas",
-      value: mockStats.ordensProntas,
+      value: ordensProntas,
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
       title: "Entregues",
-      value: mockStats.ordensEntregues,
+      value: ordensEntregues,
       icon: TrendingUp,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       title: "Lucro do Mês",
-      value: `${mockStats.lucroMes} MT`,
+      value: `${lucroMes} MT`,
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
   ];
 
-  const ordensRecentes = mockOrdens.slice(0, 3);
-  const topClientes = mockClientes.slice(0, 3);
+  const ordensRecentes = ordens.slice(0, 3);
+  const topClientes = clientes.slice(0, 3);
 
   return (
     <Layout>
@@ -92,11 +125,11 @@ const Dashboard = () => {
               <div className="space-y-4">
                 {ordensRecentes.map((ordem) => (
                   <div key={ordem.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div>
-                      <p className="font-medium text-foreground">{ordem.id}</p>
-                      <p className="text-sm text-muted-foreground">{ordem.cliente.nome}</p>
-                      <p className="text-sm text-muted-foreground">{ordem.tipoRoupa}</p>
-                    </div>
+                  <div>
+                    <p className="font-medium text-foreground">{ordem.id}</p>
+                    <p className="text-sm text-muted-foreground">{ordem.clientes.nome}</p>
+                    <p className="text-sm text-muted-foreground">{ordem.tipo_roupa}</p>
+                  </div>
                     <div className="text-right">
                       <p className="font-medium text-foreground">{ordem.total} MT</p>
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${

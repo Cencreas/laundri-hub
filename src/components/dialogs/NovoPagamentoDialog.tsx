@@ -39,6 +39,12 @@ const formSchema = z.object({
   forma_pagamento: z.string().min(1, "Selecione a forma de pagamento"),
   data_pagamento: z.string().min(1, "Data de pagamento é obrigatória"),
   observacoes: z.string().optional(),
+}).refine((data) => {
+  // Validação customizada será feita no componente para ter acesso à ordem selecionada
+  return true;
+}, {
+  message: "Valor pago não pode ser menor que o valor da ordem",
+  path: ["valor_pago"],
 });
 
 interface NovoPagamentoDialogProps {
@@ -69,17 +75,37 @@ export function NovoPagamentoDialog({ ordemId, children }: NovoPagamentoDialogPr
   });
 
   const watchOrdemId = form.watch("ordem_id");
+  const watchValorPago = form.watch("valor_pago");
   const ordemSelecionada = ordens.find(ordem => ordem.id === watchOrdemId);
+  
+  // Calcular troco
+  const valorDaOrdem = ordemSelecionada?.total || 0;
+  const troco = watchValorPago > valorDaOrdem ? watchValorPago - valorDaOrdem : 0;
+  const valorInsuficiente = watchValorPago > 0 && watchValorPago < valorDaOrdem;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      // Validação do valor pago
+      if (ordemSelecionada && values.valor_pago < ordemSelecionada.total) {
+        form.setError("valor_pago", {
+          message: `Valor pago deve ser pelo menos ${ordemSelecionada.total} MT`
+        });
+        return;
+      }
+
       console.log('📝 Submetendo formulário de novo pagamento:', values);
+      
+      let observacoesFinais = values.observacoes || "";
+      if (troco > 0) {
+        observacoesFinais += `\nTroco: ${troco.toFixed(2)} MT`;
+      }
+
       await createPagamento({
         ordem_id: values.ordem_id,
         valor_pago: values.valor_pago,
         forma_pagamento: values.forma_pagamento,
         data_pagamento: values.data_pagamento,
-        observacoes: values.observacoes,
+        observacoes: observacoesFinais,
       });
       form.reset();
       setOpen(false);
@@ -138,7 +164,13 @@ export function NovoPagamentoDialog({ ordemId, children }: NovoPagamentoDialogPr
                 <p className="text-sm"><strong>Cliente:</strong> {ordemSelecionada.clientes.nome}</p>
                 <p className="text-sm"><strong>Tipo:</strong> {ordemSelecionada.tipo_roupa}</p>
                 <p className="text-sm"><strong>Quantidade:</strong> {ordemSelecionada.quantidade}</p>
-                <p className="text-sm"><strong>Total:</strong> {ordemSelecionada.total} MT</p>
+                <p className="text-sm"><strong>Total a Pagar:</strong> {ordemSelecionada.total} MT</p>
+                {troco > 0 && (
+                  <p className="text-sm text-success font-medium"><strong>Troco:</strong> {troco.toFixed(2)} MT</p>
+                )}
+                {valorInsuficiente && (
+                  <p className="text-sm text-destructive"><strong>Valor insuficiente!</strong> Mínimo: {ordemSelecionada.total} MT</p>
+                )}
               </div>
             )}
 
@@ -215,7 +247,10 @@ export function NovoPagamentoDialog({ ordemId, children }: NovoPagamentoDialogPr
             />
 
             <DialogFooter>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button 
+                type="submit" 
+                disabled={form.formState.isSubmitting || valorInsuficiente}
+              >
                 {form.formState.isSubmitting ? "Registrando..." : "Registrar Pagamento"}
               </Button>
             </DialogFooter>

@@ -147,11 +147,14 @@ export function useOrdemServico() {
       }
 
       console.log('✅ Ordem criada com sucesso:', data);
+      // Atualizar cache imediatamente para melhor UX
       setOrdens(prev => [data, ...prev]);
       toast({
         title: "Ordem criada",
         description: "Ordem de serviço criada com sucesso.",
       });
+      // Força uma nova busca para garantir sincronização
+      setTimeout(() => fetchOrdens(), 500);
       return data;
     } catch (error: any) {
       console.error('❌ Erro completo ao criar ordem:', error);

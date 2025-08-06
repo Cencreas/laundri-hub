@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Trash2, ShirtIcon } from "lucide-react";
+import { Search, Trash2, ShirtIcon, Edit } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/layout/Layout";
 import { useOrdemServico } from "@/hooks/useOrdemServico";
 import { NovaOrdemDialog } from "@/components/dialogs/NovaOrdemDialog";
+import { EditarStatusDialog } from "@/components/dialogs/EditarStatusDialog";
 
 const OrdemServicoPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -183,6 +184,12 @@ const OrdemServicoPage = () => {
                       <p className="text-sm text-muted-foreground">Total</p>
                     </div>
                     <div className="flex items-center gap-2">
+                    <div className="flex gap-2">
+                      <EditarStatusDialog ordem={ordem}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </EditarStatusDialog>
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -191,6 +198,7 @@ const OrdemServicoPage = () => {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                    </div>
                     </div>
                   </div>
                 </div>

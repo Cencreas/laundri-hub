@@ -90,11 +90,14 @@ export function useClientes() {
       }
 
       console.log('✅ Cliente criado com sucesso:', data);
+      // Atualizar cache imediatamente para melhor UX
       setClientes(prev => [data, ...prev]);
       toast({
         title: "Cliente criado",
         description: "Cliente adicionado com sucesso.",
       });
+      // Força uma nova busca para garantir sincronização
+      setTimeout(() => fetchClientes(), 500);
       return data;
     } catch (error: any) {
       console.error('❌ Erro completo ao criar cliente:', error);

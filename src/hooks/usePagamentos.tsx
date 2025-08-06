@@ -144,11 +144,14 @@ export function usePagamentos() {
       }
 
       console.log('✅ Pagamento criado com sucesso:', data);
+      // Atualizar cache imediatamente para melhor UX
       setPagamentos(prev => [data, ...prev]);
       toast({
         title: "Pagamento registrado",
         description: "Pagamento registrado com sucesso.",
       });
+      // Força uma nova busca para garantir sincronização
+      setTimeout(() => fetchPagamentos(), 500);
       return data;
     } catch (error: any) {
       console.error('❌ Erro completo ao criar pagamento:', error);
