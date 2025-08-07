@@ -11,9 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,13 +26,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        await signUp(email, password);
-      } else {
-        const { error } = await signIn(email, password);
-        if (!error) {
-          navigate("/");
-        }
+      const { error } = await signIn(email, password);
+      if (!error) {
+        navigate("/");
       }
     } finally {
       setLoading(false);
@@ -54,7 +49,7 @@ const Login = () => {
               Lavandaria Pro
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              {isSignUp ? "Crie sua conta para começar" : "Entre na sua conta para continuar"}
+              Entre na sua conta para continuar
             </CardDescription>
           </CardHeader>
           
@@ -97,7 +92,7 @@ const Login = () => {
               </div>
               
               <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
-                {loading ? "Processando..." : (isSignUp ? "Criar Conta" : "Entrar")}
+                {loading ? "Processando..." : "Entrar"}
               </Button>
             </form>
             
@@ -116,18 +111,6 @@ const Login = () => {
               <Mail className="mr-2 h-4 w-4" />
               Google
             </Button>
-            
-            <div className="text-center text-sm text-muted-foreground">
-              {isSignUp ? "Já tem uma conta?" : "Não tem uma conta?"}{" "}
-              <Button 
-                variant="link" 
-                className="p-0 h-auto text-primary hover:text-primary/80"
-                onClick={() => setIsSignUp(!isSignUp)}
-                type="button"
-              >
-                {isSignUp ? "Entrar" : "Criar conta"}
-              </Button>
-            </div>
           </CardContent>
         </Card>
         
