@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/layout/Layout";
 import { usePagamentos } from "@/hooks/usePagamentos";
 import { useOrdemServico } from "@/hooks/useOrdemServico";
+import { useUserRole } from "@/hooks/useUserRole";
 import { NovoPagamentoDialog } from "@/components/dialogs/NovoPagamentoDialog";
 
 const Pagamentos = () => {
@@ -24,6 +25,7 @@ const Pagamentos = () => {
   const [deletePagamentoId, setDeletePagamentoId] = useState<string | null>(null);
   const { pagamentos, loading: loadingPagamentos, deletePagamento, refetch } = usePagamentos();
   const { ordens, loading: loadingOrdens } = useOrdemServico();
+  const { isAdmin, loading: loadingRole } = useUserRole();
 
   const handleDeletePagamento = async (id: string) => {
     try {
@@ -35,7 +37,7 @@ const Pagamentos = () => {
     }
   };
 
-  if (loadingPagamentos || loadingOrdens) {
+  if (loadingPagamentos || loadingOrdens || loadingRole) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-96">
@@ -90,8 +92,18 @@ const Pagamentos = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Pagamentos</h1>
-            <p className="text-muted-foreground">Controlar todos os pagamentos e faturação</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-foreground">Pagamentos</h1>
+              {isAdmin && (
+                <Badge variant="default" className="bg-primary text-primary-foreground">
+                  Admin
+                </Badge>
+              )}
+            </div>
+            <p className="text-muted-foreground">
+              Controlar todos os pagamentos e faturação
+              {!isAdmin && " (Somente visualização - sem permissão para excluir)"}
+            </p>
           </div>
           <NovoPagamentoDialog />
         </div>
@@ -202,14 +214,16 @@ const Pagamentos = () => {
                       <p className="text-lg font-bold text-success">{pagamento.valor_pago} MT</p>
                       <p className="text-sm text-muted-foreground">Valor Pago</p>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeletePagamentoId(pagamento.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {isAdmin && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeletePagamentoId(pagamento.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
