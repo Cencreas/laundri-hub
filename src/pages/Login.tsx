@@ -7,26 +7,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Droplets, Mail, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, user } = useAuth();
+  const {
+    signIn,
+    user
+  } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     if (user) {
       navigate("/");
     }
   }, [user, navigate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const { error } = await signIn(email, password);
+      const {
+        error
+      } = await signIn(email, password);
       if (!error) {
         navigate("/");
       }
@@ -34,9 +35,7 @@ const Login = () => {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-xl border-0 bg-card/95 backdrop-blur">
           <CardHeader className="text-center pb-2">
@@ -61,15 +60,7 @@ const Login = () => {
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
+                  <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-10" required />
                 </div>
               </div>
               
@@ -79,15 +70,7 @@ const Login = () => {
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
+                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-10" required />
                 </div>
               </div>
               
@@ -101,16 +84,11 @@ const Login = () => {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  Ou continue com
-                </span>
+                
               </div>
             </div>
             
-            <Button variant="outline" className="w-full h-11" type="button">
-              <Mail className="mr-2 h-4 w-4" />
-              Google
-            </Button>
+            
           </CardContent>
         </Card>
         
@@ -118,8 +96,6 @@ const Login = () => {
           © 2024 Lavandaria Pro. Todos os direitos reservados.
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
